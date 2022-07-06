@@ -1,29 +1,30 @@
 ---
 environment:
   title: _3dSlabBurner
-  tagDirectory: false
+  tagDirectory: true
 arguments: {}
 timestepper:
   name: theMainTimeStepper
   arguments:
     ts_type: rk
     ts_max_time: 1
-    ts_max_steps: 10000000
+    ts_max_steps: 1000 #10000000
     ts_dt: 1.0e-10
     ts_adapt_monitor: ""
     ts_adapt_safety: 0.9
   io:
-    interval: 1000
+    !ablate::io::Hdf5MultiFileSerializer
+    interval: 5
   domain: !ablate::domain::BoxMeshBoundaryCells
     name: simpleBoxField
-    faces: [280, 40, 40]
+    faces: [30, 10, 10] #[280, 40, 40]
     lower: [ 0.0, 0.0, -0.0127]
     upper: [ 0.165354, 0.027686, 0.0127]
     simplex: false
-    mainRegion:
-      name: chamberRegion
-    boundaryFaceRegion:
-      name: boundaryFaces
+#    mainRegion:
+#      name: chamberRegion
+#    boundaryFaceRegion:
+#      name: boundaryFaces
     preModifiers:
       - !ablate::domain::modifiers::SetFromOptions
         dm_refine: 0 #this must be zero
@@ -51,16 +52,16 @@ timestepper:
           name: flowRegion
         minuendRegion:
           name: chamberRegion
-        subtrahendRegion:
-          name: slabBurner
+        subtrahendRegions:
+          - name: slabBurner
       - !ablate::domain::modifiers::SubtractLabel
         # cut the slabBurner out of the boundaryWalls
         differenceRegion:
           name: boundaryWalls
         minuendRegion:
           name: allBoundaryWalls
-        subtrahendRegion:
-          name: slabBurner
+        subtrahendRegions:
+          - name: slabBurner
       - !ablate::domain::modifiers::TagLabelInterface
         # define the boundary between the slab burner and flow
         leftRegion:
@@ -82,7 +83,7 @@ timestepper:
       - !ablate::domain::FieldDescription
         name: pressure
         type: FV
-        location: aux      
+        location: aux
   initialization:
     - !ablate::finiteVolume::fieldFunctions::Euler
       state: &flowFieldState
@@ -135,7 +136,7 @@ solvers:
     - !ablate::monitors::TimeStepMonitor
       interval: 25
     - !ablate::monitors::PhysicsTimeStep
-      interval: 25        
+      interval: 25
     - !ablate::monitors::Probes
       probes: !ablate::monitors::probes::Rake
         name: front
@@ -143,7 +144,7 @@ solvers:
         end: [0.0363414, 0.027686, 0.0]
         number: 10
       bufferSize: 100
-      variables: [ euler, densityYi ]  
+      variables: [ euler, densityYi ]
     - !ablate::monitors::Probes
       probes: !ablate::monitors::probes::Rake
         name: med
@@ -151,7 +152,7 @@ solvers:
         end: [0.0702652, 0.027686, 0.0]
         number: 10
       bufferSize: 100
-      variables: [ euler, densityYi ]  
+      variables: [ euler, densityYi ]
     - !ablate::monitors::Probes
       probes: !ablate::monitors::probes::Rake
         name: back
@@ -159,7 +160,7 @@ solvers:
         end: [0.104189, 0.027686, 0.0]
         number: 10
       bufferSize: 100
-      variables: [ euler, densityYi]  
+      variables: [ euler, densityYi]
     additionalProcesses:
       - !ablate::finiteVolume::processes::PressureGradientScaling
         &pgs
@@ -171,7 +172,7 @@ solvers:
       - !ablate::finiteVolume::processes::TChemReactions
         eos: *eos
     fluxCalculator: !ablate::finiteVolume::fluxCalculator::AusmpUp
-      pgs: *pgs      
+      pgs: *pgs
   - !ablate::boundarySolver::BoundarySolver
     id: inlet
     region:

@@ -8,7 +8,7 @@ timestepper:
   arguments:
     ts_type: rk
     ts_max_time: 1
-    ts_max_steps: 100000000
+    ts_max_steps: 10 #100000000
     ts_dt: 1.0e-10
     ts_adapt_monitor: ""
     ts_adapt_safety: 0.9
@@ -16,7 +16,7 @@ timestepper:
     interval: 0
   domain: !ablate::domain::BoxMeshBoundaryCells
     name: simpleBoxField
-    faces: [2240, 320]
+    faces: [21,3] #[2240, 320]
     lower: [ 0.0, 0.0]
     upper: [ 0.165354, 0.027686]
     simplex: false
@@ -49,16 +49,16 @@ timestepper:
           name: flowRegion
         minuendRegion:
           name: chamberRegion
-        subtrahendRegion:
-          name: slabBurner
+        subtrahendRegions:
+          - name: slabBurner
       - !ablate::domain::modifiers::SubtractLabel
         # cut the slabBurner out of the boundaryWalls
         differenceRegion:
           name: boundaryWalls
         minuendRegion:
           name: allBoundaryWalls
-        subtrahendRegion:
-          name: slabBurner
+        subtrahendRegions:
+          - name: slabBurner
       - !ablate::domain::modifiers::TagLabelInterface
         # define the boundary between the slab burner and flow
         leftRegion:
