@@ -8,16 +8,16 @@ timestepper:
   arguments:
     ts_type: rk
     ts_max_time: 1
-    ts_max_steps: 100 #1000000
+    ts_max_steps: 1000000
     ts_dt: 1.0e-10
     ts_adapt_monitor: ""
     ts_adapt_safety: 0.8
   io:
     !ablate::io::Hdf5MultiFileSerializer
-    interval: 4
+    interval: 5
   domain: !ablate::domain::BoxMeshBoundaryCells
     name: simpleBoxField
-    faces: [20, 5, 5] #[280, 40, 40]
+    faces: [280, 40, 40]
     lower: [ 0.0, 0.0, -0.0127]
     upper: [ 0.165354, 0.027686, 0.0127]
     simplex: false
