@@ -1,6 +1,6 @@
 ---
 environment:
-  title: _3dMotorCasing_newmesh
+  title: _3dMotorCasing
   tagDirectory: true
 arguments:
   dm_plex_gmsh_use_regions: true
@@ -15,7 +15,7 @@ timestepper:
     ts_adapt_safety: 0.8
   io:
     !ablate::io::Hdf5MultiFileSerializer
-    interval: 1
+    interval: 100
   domain: !ablate::domain::MeshFile
     name:
     path: ../geom/CombustionChamberFlowRegion.T3678.msh
@@ -69,7 +69,9 @@ timestepper:
           name: boundaryCells
         subtrahendRegions:
           - name: InletFlowRegion
+            value: 27
           - name: OutletFlowRegion
+            value: 28
 
       #define the boundary between the flow region and the fuel grain
       - !ablate::domain::modifiers::TagLabelInterface
@@ -77,6 +79,7 @@ timestepper:
           name: flowRegion
         rightRegion:
           name: FuelGrainRegion
+          value: 29
         boundaryFaceRegion:
           name: fuelGrainBoundaryCells
         rightBoundaryCellRegion:
@@ -98,6 +101,7 @@ timestepper:
           name: interiorFlowRegion
         rightRegion:
           name: OutletFlowRegion
+          value: 28
         boundaryFaceRegion:
           name: outletBoundaryFaces
         leftBoundaryCellRegion:
@@ -223,6 +227,7 @@ solvers:
     id: outlet
     region:
       name: OutletFlowRegion
+      value: 28
     fieldBoundary:
       name: boundaryFaces
     mergeFaces: true

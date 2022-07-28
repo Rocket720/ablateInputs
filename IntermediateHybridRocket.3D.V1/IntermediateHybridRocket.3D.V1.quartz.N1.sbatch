@@ -2,8 +2,8 @@
 #### See https://hpc.llnl.gov/training/tutorials/slurm-and-moab#LC
 
 ##### These lines are for Slurm
-#SBATCH -N 100
-#SBATCH -J 3dSlab_N100_R140x20x20_S10000
+#SBATCH -N 1
+#SBATCH -J 3dMotorCasing_N1_T3678_S1000
 #SBATCH -t 24:00:00
 #SBATCH -p pbatch
 #SBATCH --mail-type=ALL
@@ -29,11 +29,11 @@ mkdir tmp_$SLURM_JOBID
 cd tmp_$SLURM_JOBID
 
 ##### Launch parallel job using srun
-srun -n3600 /g/g20/arnav/ablateOpt/ablate \
-	--input /p/lustre1/arnav/ablateInputs/slabBurnerChem.3D.V19/slabBurnerChem.3D.V19.yaml \
-	-yaml::environment::title 3dSlab_N100_140x20x20 \
-	-yaml::timestepper::arguments::ts_max_step 10000 \
-	-yaml::timestepper::domain::faces [140, 20, 20] \
+srun -n36 /g/g20/arnav/ablateOpt/ablate \
+	--input /p/lustre1/arnav/ablateInputs/IntermediateHybridRocket.3D.V1/IntermediateHybridRocket.3D.V1.yaml \
+	-yaml::environment::title 3dMotorCasing_N1_T3678 \
+	-yaml::timestepper::arguments::ts_max_step 1000 \
+	-yaml::timestepper::io::interval 10 \
 	-yaml::timestepper::domain::fields::[0]::conservedFieldOptions::petscfv_type upwind \
 
 	
