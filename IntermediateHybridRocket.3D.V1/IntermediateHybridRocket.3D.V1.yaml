@@ -18,7 +18,7 @@ timestepper:
     interval: 100
   domain: !ablate::domain::MeshFile
     name:
-    path: ../geom/CombustionChamberFlowRegion.T3678.msh
+    path: ../geom/CombustionChamberFlowRegion.3D.V1.T3678.msh
     options:
       dm_refine: 0
       dm_plex_check_all: true

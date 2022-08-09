@@ -35,6 +35,6 @@ srun -n36 /g/g20/arnav/ablateOpt/ablate \
 	-yaml::timestepper::arguments::ts_max_steps 10000 \
 	-yaml::timestepper::io::interval 50 \
 	-yaml::timestepper::domain::fields::[0]::conservedFieldOptions::petscfv_type upwind \
-	-yaml::timestepper::domain::path ../geom/CombustionChamberFlowRegion.T29417.msh
+	-yaml::timestepper::domain::path ../geom/CombustionChamberFlowRegion.3D.V1.T29417.msh
 
 echo 'Done'

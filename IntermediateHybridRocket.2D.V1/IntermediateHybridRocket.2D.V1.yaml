@@ -2,81 +2,121 @@
 environment:
   title: _2dMotorCasing
   tagDirectory: true
-arguments: {}
+arguments:
+  dm_plex_gmsh_use_regions: true
 timestepper:
   name: theMainTimeStepper
   arguments:
     ts_type: rk
     ts_max_time: 1
-    ts_max_steps: 100 #1000000
+    ts_max_steps: 1000 #1000000
     ts_dt: 1.0e-10
     ts_adapt_monitor: ""
     ts_adapt_safety: 0.8
   io:
     !ablate::io::Hdf5MultiFileSerializer
-    interval: 10
-  domain: !ablate::domain::BoxMeshBoundaryCells
-    name: simpleBoxField
-    faces: [10, 50]
-    lower: [ -0.025, -0.25]
-    upper: [ 0.025, 0]
-    simplex: false
-    preModifiers:
-      - !ablate::domain::modifiers::SetFromOptions
-        dm_refine: 0 #this must be zero
-        dm_partition_view: 1
-#        dm_label_view: interiorFlowRegion
-      - !ablate::domain::modifiers::DistributeWithGhostCells
-        ghostCellDepth: 3
-    postModifiers:
-      - !ablate::domain::modifiers::MergeLabels
-        mergedRegion:
-          name: allBoundaryWalls
-        regions:
-          - name: boundaryCellsTop
-          - name: boundaryCellsBottom
-      - !ablate::domain::modifiers::CreateLabel
-        # define the motor Casing
+    interval: 100
+  domain: !ablate::domain::MeshFile
+    name:
+    path: ../geom/CombustionChamberFlowProfile.msh
+    options:
+      dm_refine: 0
+#      dm_plex_check_all: false
+      dm_partition_view: true
+      dm_distribute_overlap: 2
+
+    modifiers:
+      #Extracting all tagged surfaces from .msh
+      - !ablate::domain::modifiers::CompleteLabel
         region:
-          name: motorCasing
-        function: !ablate::mathFunctions::geom::Surface
-          path: ../geom/CombustionChamberAssemblyV10.step
-      - !ablate::domain::modifiers::SubtractLabel
-        # cut the motorCasing out of the flowRegion
-        differenceRegion:
+          name: InletFlowRegion
+      - !ablate::domain::modifiers::CompleteLabel
+        region:
+          name: OutletFlowRegion
+      - !ablate::domain::modifiers::CompleteLabel
+        region:
+          name: FuelGrainRegion
+      - !ablate::domain::modifiers::CompleteLabel
+        region:
+          name: ChamberWallRegion
+
+      #Extruding Boundary Cells
+      - !ablate::domain::modifiers::ExtrudeLabel
+        regions:
+          - name: InletFlowRegion
+            value: 27
+          - name: OutletFlowRegion
+            value: 28
+          - name: FuelGrainRegion
+            value: 29
+          - name: ChamberWallRegion
+            value: 30
+        # mark all the resulting boundary faces with boundaryFaces label
+        boundaryRegion:
+          name: boundaryFaces
+        # tag the original mesh as the flow region
+        originalRegion:
           name: flowRegion
-        minuendRegion:
-          name: interiorCells
-        subtrahendRegions:
-          - name: motorCasing
+        # tag the new boundary cells for easy boundary condition specifications
+        extrudedRegion:
+          name: boundaryCells
+        thickness: 1
+
       - !ablate::domain::modifiers::SubtractLabel
-        # cut the motorCasing out of the boundaryWalls
         differenceRegion:
-          name: boundaryWalls
+          name: wallBoundaryCells
         minuendRegion:
-          name: allBoundaryWalls
+          name: boundaryCells
         subtrahendRegions:
-          - name: motorCasing
+          - name: InletFlowRegion
+            value: 27
+          - name: OutletFlowRegion
+            value: 28
+
+      #define the boundary between the flow region and the fuel grain
       - !ablate::domain::modifiers::TagLabelInterface
-        # define the boundary between the motor Casing and flow
         leftRegion:
           name: flowRegion
         rightRegion:
-          name: motorCasing
+          name: FuelGrainRegion
+          value: 29
         boundaryFaceRegion:
-          name: motorCasingBoundaryFaces
+          name: fuelGrainBoundaryCells
         rightBoundaryCellRegion:
-          name: motorCasingBoundaryCells
+          name: fuelGrainBoundaryFaces
+
+      # Remove the fuelGrainBoundaryFaces from the flow region, necessary for sublimation surfaces
       - !ablate::domain::modifiers::SubtractLabel
-        # remove the motorCasingFace from the flowRegion
         differenceRegion:
           name: interiorFlowRegion
         minuendRegion:
           name: flowRegion
         subtrahendRegions:
-          - name: motorCasingBoundaryFaces
+          - name: fuelGrainBoundaryFaces
         incompleteLabel: true
-      - !ablate::domain::modifiers::GhostBoundaryCells
+
+      # tagging outlet boundary for rocket monitor
+      - !ablate::domain::modifiers::TagLabelInterface
+        leftRegion:
+          name: interiorFlowRegion
+        rightRegion:
+          name: OutletFlowRegion
+          value: 28
+        boundaryFaceRegion:
+          name: outletBoundaryFaces
+        leftBoundaryCellRegion:
+          name: outletFlowCells
+
+      - !ablate::domain::modifiers::DistributeWithGhostCells
+        ghostCellDepth: 2
+
+      #Including extra options for Mesh Visualization
+#      - !ablate::monitors::DmViewFromOptions
+#        options: ascii
+#      - !ablate::monitors::DmViewFromOptions
+#        options: ascii::ascii_info_detail
+#      - !ablate::monitors::DmViewFromOptions
+#        options: ":$OutputDirectory/mesh.tex:ascii_latex"three
     fields:
       - !ablate::finiteVolume::CompressibleFlowFields
         eos: !ablate::eos::TChem  &eos
@@ -84,21 +124,14 @@ timestepper:
           thermoFile: ../mechanisms/grimech30.thermo.dat
         conservedFieldOptions:
           petscfv_type: upwind
-        region:
-          name: domain
-      - !ablate::domain::FieldDescription
-        name: pressure
-        type: FV
-        location: aux
-        region:
-          name: domain
+
   initialization:
     - !ablate::finiteVolume::fieldFunctions::Euler
       state: &flowFieldState
         eos: *eos
         temperature: !ablate::mathFunctions::geom::Sphere
-          center: [0.0,  0.003]
-          radius: 0.003
+          center: [3, 0]
+          radius: 3
           insideValues: [1500]
           outsideValues: [298.15]
         pressure: 101325.0
@@ -116,7 +149,7 @@ timestepper:
     - !ablate::finiteVolume::fieldFunctions::Euler
       # slab Burner
       region:
-        name: motorCasingBoundaryCells
+        name: boundaryCells
       state: &fuelFieldState
         eos: *eos
         temperature: 653.0
@@ -146,7 +179,7 @@ timestepper:
               field: 2.51803728765E-02
     - !ablate::finiteVolume::fieldFunctions::DensityMassFractions
       region:
-        name: motorCasingBoundaryCells
+        name: boundaryCells
       state: *fuelFieldState
 
 solvers:
@@ -180,7 +213,8 @@ solvers:
   - !ablate::boundarySolver::BoundarySolver
     id: inlet
     region:
-      name: boundaryCellsLeft
+      name: InletFlowRegion
+      value: 27
     fieldBoundary:
       name: boundaryFaces
     mergeFaces: true
@@ -188,11 +222,12 @@ solvers:
       - !ablate::boundarySolver::lodi::Inlet
         eos: *eos
         pgs: *pgs
-        velocity: "min(15, t*15/.025) , 0.0"
+        velocity: "min(15, t*15/.025), 0.0"
   - !ablate::boundarySolver::BoundarySolver
     id: outlet
     region:
-      name: boundaryCellsRight
+      name: OutletFlowRegion
+      value: 28
     fieldBoundary:
       name: boundaryFaces
     mergeFaces: true
@@ -204,9 +239,9 @@ solvers:
         reflectFactor: .15
         pgs: *pgs
   - !ablate::boundarySolver::BoundarySolver
-    id: walls
+    id: wallBoundary
     region:
-      name: boundaryWalls
+      name: wallBoundaryCells
     fieldBoundary:
       name: boundaryFaces
     mergeFaces: true
@@ -215,11 +250,11 @@ solvers:
         eos: *eos
         pgs: *pgs
   - !ablate::boundarySolver::BoundarySolver
-    id: slab boundary
+    id: grain boundary
     region:
-      name: motorCasingBoundaryCells
+      name: fuelGrainBoundaryCells
     fieldBoundary:
-      name: motorCasingBoundaryFaces
+      name: fuelGrainBoundaryFaces
     processes:
       - !ablate::boundarySolver::physics::Sublimation
         latentHeatOfFusion: 941000.000
@@ -227,8 +262,8 @@ solvers:
         pgs: *pgs
         eos: *eos
         additionalHeatFlux: !ablate::mathFunctions::geom::Sphere
-          center: [ 0.0,  0.003 ]
-          radius: 0.003
+          center: [3, 0.0]
+          radius: 3
           insideValues: "t < .06? 250000 : 0.0 "# 150 KW/m2
         massFractions: *fuelMassFrac
 
