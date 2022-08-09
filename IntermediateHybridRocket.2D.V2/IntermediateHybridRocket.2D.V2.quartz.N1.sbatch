@@ -3,7 +3,7 @@
 
 ##### These lines are for Slurm
 #SBATCH -N 1
-#SBATCH -J 2dMotorCasingV1_N1_T3678_S1000_ColdFlow
+#SBATCH -J 3dMotorCasingV2_N1_T3678_S1000
 #SBATCH -t 24:00:00
 #SBATCH -p pbatch
 #SBATCH --mail-type=ALL
@@ -30,13 +30,11 @@ cd tmp_$SLURM_JOBID
 
 ##### Launch parallel job using srun
 srun -n36 /g/g20/arnav/ablateOpt/ablate \
-	--input /p/lustre1/arnav/ablateInputs/IntermediateHybridRocket.3D.V1/IntermediateHybridRocket.3D.V1.yaml \
-	-yaml::environment::title 3dMotorCasing_N1_T3678_ColdFlow \
+	--input /p/lustre1/arnav/ablateInputs/IntermediateHybridRocket.3D.V2/IntermediateHybridRocket.3D.V2.yaml \
+	-yaml::environment::title 3dMotorCasingV2_N1_T3678 \
 	-yaml::timestepper::arguments::ts_max_step 1000 \
 	-yaml::timestepper::io::interval 10 \
-	-yaml::timestepper::domain::fields::[0]::conservedFieldOptions::petscfv_type upwind \
-	-yaml::timestepper::initialization::[0]::state::temperature::insideValues [298.15] \
-	-yaml::timestepper::initialization::[0]::state::temperature::center [0.0,0.0,20] \
+	-yaml::timestepper::domain::fields::[0]::conservedFieldOptions::petscfv_type upwind
 
 
 	
