@@ -292,6 +292,6 @@ solvers:
               start: [ 100, -50, 0 ]
               end: [ 200, -50, 0 ]
               radius: 50
-          insideValues: "t < .06? 500000 : 0.0 "# 150 KW/m2
+          insideValues: "t < .06? 500000 : 0.0" # 150 KW/m2
         massFractions: *fuelMassFrac
 

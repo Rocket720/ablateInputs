@@ -1,0 +1,4 @@
+time: 0.10286303623763546
+dt: 2.0256646762998635e-97
+timeStep: 270
+sequenceNumber: 27
