@@ -4,8 +4,8 @@
 ##### These lines are for Slurm
 #SBATCH -N 1
 #SBATCH -J 2DDebugChamber_N1_S10000_Exp0
-#SBATCH -t 24:00:00
-#SBATCH -p pbatch
+#SBATCH -t 60:00
+#SBATCH -p pdebug
 #SBATCH --mail-type=ALL
 #SBATCH -A sunyb
 
@@ -28,20 +28,34 @@ export PATH="${PETSC_DIR}/${PETSC_ARCH}/bin:$PATH"
 mkdir tmp_$SLURM_JOBID
 cd tmp_$SLURM_JOBID
 
-##### Experiment0
-# Base Case with standard flow
+##### Experiment -1
+# troubleshooting quartz run
 
 ##### Launch parallel job using srun
-srun -n1 /g/g20/arnav/ablateOpt/ablate \
+#srun -n1 /g/g20/arnav/ablateOpt/ablate \
+#	--input /p/lustre1/arnav/ablateInputs/DebuggingChamber.2D/DebugChamber.2D.yaml \
+#	-yaml::environment::title 2DDebugChamber_N1_S10000_Exp0 \
+#	-yaml::timestepper::arguments::ts_max_step 10000 \
+#	-yaml::timestepper::io::interval 50 \
+#	-yaml::timestepper::domain::fields::[0]::conservedFieldOptions::petscfv_type upwind \
+#    	-yaml::timestepper::domain::path ../geom/DebugChamberProfile.t659.msh \
+#    	-yaml::solvers::[1]::processes::[0]::velocity "\"min(50,t*50/0.025),0\"" \
+#    	-yaml::timestepper::initialization::[0]::state::temperature::insideValues [1500] \
+#    	-yaml::timestepper::initialization::[4]::state::temperature 653.0 \
+#    	-yaml::solvers::[4]::processes::[0]::additionalHeatFlux::insideValues "\"t<.06?500000:0.0\"" \
+
+totalview srun -a -N1 -n1 -pdebug /g/g20/arnav/ablateOpt/ablate \
+	-g \
 	--input /p/lustre1/arnav/ablateInputs/DebuggingChamber.2D/DebugChamber.2D.yaml \
 	-yaml::environment::title 2DDebugChamber_N1_S10000_Exp0 \
 	-yaml::timestepper::arguments::ts_max_step 10000 \
 	-yaml::timestepper::io::interval 50 \
 	-yaml::timestepper::domain::fields::[0]::conservedFieldOptions::petscfv_type upwind \
-    	-yaml::timestepper::domain::path ../geom/DebugChamberProfile.t14855.msh \
+    	-yaml::timestepper::domain::path ../geom/DebugChamberProfile.t659.msh \
     	-yaml::solvers::[1]::processes::[0]::velocity "\"min(50,t*50/0.025),0\"" \
     	-yaml::timestepper::initialization::[0]::state::temperature::insideValues [1500] \
     	-yaml::timestepper::initialization::[4]::state::temperature 653.0 \
     	-yaml::solvers::[4]::processes::[0]::additionalHeatFlux::insideValues "\"t<.06?500000:0.0\"" \
+
 
 echo 'Done'
